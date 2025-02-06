@@ -1,7 +1,13 @@
 import torch
+from torch import nn, optim
+from tqdm import tqdm
 
 
 def sample_images(args, model, initial_x=None, num_samples=16):
+    alphas = 1 - torch.linspace(args.beta_start, args.beta_end, args.noise_step)
+    betas = 1 - alphas
+    alphas_cumprod = torch.cumprod(alphas, 0)
+
     model.eval()
     device = next(model.parameters()).device
     with torch.no_grad():
@@ -9,7 +15,7 @@ def sample_images(args, model, initial_x=None, num_samples=16):
             x = initial_x.to(device)
         else:
             x = torch.randn((num_samples, 1, 28, 28)).to(device)
-        for t in reversed(range(args.noise_step)):
+        for t in tqdm(reversed(range(args.noise_step))):
             t_tensor = torch.tensor([t] * x.shape[0]).to(device)
             noise_pred = model(x, t_tensor)
             alpha_t = alphas[t]
@@ -36,7 +42,7 @@ def sample_z_given_x_y(y, x, rho):
     z = mean + noise
     return z
 
-def gibbs_sampling(args, y, model, num_iterations=100):
+def gibbs_sampling(args, y, model, num_iterations=10):
     # Initialize x with noise
     x = torch.randn_like(y)
     for _ in range(num_iterations):

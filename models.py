@@ -38,7 +38,7 @@ class DiffusionModel(nn.Module):
 
 # Define the score model (Simple UNet-like architecture)
 class SimpleUNet(nn.Module):
-    def __init__(self):
+    def __init__(self, args):
         super(SimpleUNet, self).__init__()
         self.down = nn.Sequential(
             nn.Conv2d(1, 64, kernel_size=3, stride=2, padding=1),
@@ -55,9 +55,10 @@ class SimpleUNet(nn.Module):
             nn.ReLU(),
             nn.ConvTranspose2d(64, 1, kernel_size=4, stride=2, padding=1),
         )
+        self.noise_step = args.noise_step
 
     def forward(self, x, t):
-        t_emb = t[:, None, None, None].float() / T
+        t_emb = t[:, None, None, None].float() / (self.noise_step - 1)
         t_emb = t_emb.expand_as(x)
         x = torch.cat([x, t_emb], dim=1) if t_emb.shape[1] != x.shape[1] else x
         x = self.down(x)
