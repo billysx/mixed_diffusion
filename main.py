@@ -25,13 +25,15 @@ def train(args, dataloader):
 
     # diffusion_model = DiffusionModel(input_dim=input_dim)
     # optimizer = optim.Adam(diffusion_model.parameters(), lr=args.learning_rate)
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = "mps"
+
     betas = torch.linspace(args.beta_start, args.beta_end, args.noise_step)
     alphas = 1 - betas
-    alphas_cumprod = torch.cumprod(alphas, 0)
-    alphas_cumprod_prev = torch.cat([torch.tensor([1.0]), alphas_cumprod[:-1]])
+    alphas_cumprod = torch.cumprod(alphas, 0).to(device)
+    alphas_cumprod_prev = torch.cat([torch.tensor([1.0]).to(device), alphas_cumprod[:-1]])
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    device = "cpu"
+
     model = SimpleUNet(args).to(device)
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
     model.train()
@@ -71,7 +73,7 @@ def main(args):
     mnist_train = datasets.MNIST(root="./data", train=True, download=True, transform=transform)
     mnist_test = datasets.MNIST(root="./data", train=False, download=True, transform=transform)
     train_dataloader = DataLoader(mnist_train, batch_size=args.batch_size, shuffle=True)
-    test_dataloader = DataLoader(mnist_test, batch_size=args.batch_size, shuffle=False)
+    test_dataloader = DataLoader(mnist_test, batch_size=1, shuffle=False)
 
     
     model = train(args, train_dataloader)
@@ -84,6 +86,8 @@ def main(args):
     # Perform Gibbs sampling to denoise
     x_denoised = gibbs_sampling(args, y, model)
     print("Denoised samples shape:", x_denoised.shape)
+    # Save the denoised samples
+    torch.save(x_denoised, "denoised_samples.png")
 
 # Example usage
 if __name__ == "__main__":
