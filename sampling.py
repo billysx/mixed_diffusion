@@ -121,9 +121,9 @@ def sample_z_given_x_y(args, y, x, rho):
     variance = torch.eye(d) * (1 / (2 * mean_denominator))
     
     # Sample z from P(z|y,x)
-    # z = naive_sampling(args, mean, variance)
+    z = naive_sampling(args, mean, variance)
 
-    z = langevin_monte_carlo(args, mean, variance)
+    # z = langevin_monte_carlo(args, mean, variance)
     
     return z
 
